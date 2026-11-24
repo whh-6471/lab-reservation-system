@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('预约审核')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('预约审核')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <div class="tabs">
+            <a th:classappend="${tab == 'pending'} ? 'active'"
+               th:href="@{/teacher/audit(tab='pending')}">待审核预约</a>
+            <a th:classappend="${tab == 'audited'} ? 'active'"
+               th:href="@{/teacher/audit(tab='audited')}">我的审核记录</a>
+        </div>
+
+        <form class="filter-bar" method="get" th:action="@{/teacher/audit}">
+            <input type="hidden" name="tab" th:value="${tab}"/>
+            <select name="labId">
+                <option value="">全部实验室</option>
+                <option th:each="lab : ${labs}" th:value="${lab.id}" th:text="${lab.name}"
+                        th:selected="${labId != null and labId == lab.id}">实验室</option>
+            </select>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="实验名称 / 申请人"/>
+            <input type="date" name="date" th:value="${date}"/>
+            <button type="submit" class="btn btn-primary">查询</button>
+            <a class="btn btn-ghost" th:href="@{/teacher/audit(tab=${tab})}">重置</a>
+            <span class="filter-note" th:if="${tab == 'pending'}">审核通过后学生即可使用实验室，请仔细核对时段与用途</span>
+        </form>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="${tab == 'pending' ? '待审核预约列表' : '我审核过的记录'}">预约列表</h3>
+                <span class="tag" th:text="${'共 ' + pageData.totalElements + ' 条'}">共 0 条</span>
+            </div>
+
+            <div class="table-wrap" th:if="${not #lists.isEmpty(reservations)}">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>申请人</th>
+                        <th>实验室</th>
+                        <th>预约时间</th>
+                        <th>实验信息</th>
+                        <th>状态</th>
+                        <th class="col-actions">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${reservations}">
+                        <td>
+                            <strong th:text="${r.applicantName}">姓名</strong>
+                            <small class="cell-sub" th:text="${r.applicantRoleText}">学生</small>
+                        </td>
+                        <td>
+                            <span th:text="${r.labName}">实验室</span>
+                            <small class="cell-sub" th:text="${r.labLocation}">位置</small>
+                        </td>
+                        <td>
+                            <span th:text="${r.reservationDateText}">日期</span>
+                            <small class="cell-sub" th:text="${r.timeRangeText + ' · ' + r.durationText}">时间</small>
+                        </td>
+                        <td class="col-wide">
+                            <strong th:text="${r.title}">实验名称</strong>
+                            <small class="cell-sub" th:text="${r.purpose}">用途</small>
+                            <small class="cell-sub" th:text="${'参与人数：' + r.participantCount + ' 人'}">人数</small>
+                        </td>
+                        <td>
+                            <span th:class="${r.statusBadge}" th:text="${r.statusText}">状态</span>
+                            <small class="cell-sub" th:if="${r.rejectReason != null}"
+                                   th:text="${'驳回：' + r.rejectReason}">理由</small>
+                        </td>
+                        <td class="col-actions">
+                            <a class="btn btn-ghost btn-sm" th:href="@{/reservations/{id}(id=${r.id})}">详情</a>
+                            <div class="audit-actions" th:if="${tab == 'pending' and r.status == 'PENDING'}">
+                                <form class="inline-form" th:action="@{/teacher/audit/{id}(id=${r.id})}" method="post">
+                                    <input type="hidden" name="action" value="APPROVE"/>
+                                    <button type="submit" class="btn btn-primary btn-sm"
+                                            data-confirm="确认通过该预约吗？">通过</button>
+                                </form>
+                                <form class="reject-form" th:action="@{/teacher/audit/{id}(id=${r.id})}" method="post">
+                                    <input type="hidden" name="action" value="REJECT"/>
+                                    <input type="text" name="reason" placeholder="驳回理由（必填）" required
+                                           maxlength="255"/>
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            data-confirm="确认驳回该预约吗？">驳回</button>
+                                </form>
+                            </div>
+                            <small class="cell-sub" th:if="${tab == 'audited'}"
+                                   th:text="${'审核人：' + (r.auditUserName != null ? r.auditUserName : '-') + ' · ' + r.auditTimeText}">
+                                审核信息</small>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="empty" th:if="${#lists.isEmpty(reservations)}">
+                <span th:text="${tab == 'pending' ? '当前没有待审核的预约' : '暂无审核记录'}">暂无数据</span>
+            </p>
+
+            <div class="pager" th:if="${pageData.totalPages > 1}">
+                <a th:if="${pageData.hasPrevious()}"
+                   th:href="@{/teacher/audit(tab=${tab},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number - 1})}">上一页</a>
+                <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                   th:href="@{/teacher/audit(tab=${tab},labId=${labId},keyword=${keyword},date=${date},page=${i})}"
+                   th:text="${i + 1}">1</a>
+                <a th:if="${pageData.hasNext()}"
+                   th:href="@{/teacher/audit(tab=${tab},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number + 1})}">下一页</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

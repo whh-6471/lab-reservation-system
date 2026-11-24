@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('空教室查询')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('空教室查询')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="hero-eyebrow">一号教学楼 · 空闲教室</p>
+                <h2>共 5 层，每层 20 间，合计 100 间教室</h2>
+                <p class="hero-desc">编号规则：1101 表示一号教学楼 1 层第 01 间，1205 表示 2 层第 05 间，依此类推。</p>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <strong th:text="${stats.free}">80</strong>
+                    <span>空闲教室</span>
+                </div>
+                <div class="hero-stat">
+                    <strong th:text="${stats.inUse}">15</strong>
+                    <span>使用中</span>
+                </div>
+                <div class="hero-stat">
+                    <strong th:text="${stats.total}">100</strong>
+                    <span>教室总数</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="stat-grid">
+            <article class="stat-card">
+                <p class="stat-label">教室总数</p>
+                <strong class="stat-value" th:text="${stats.total}">100</strong>
+                <small class="stat-hint">一号教学楼 5 层</small>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">空闲教室</p>
+                <strong class="stat-value" th:text="${stats.free}">80</strong>
+                <small class="stat-hint">可直接安排课程或自习</small>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">使用中</p>
+                <strong class="stat-value" th:text="${stats.inUse}">15</strong>
+                <small class="stat-hint">正在上课或活动占用</small>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">维护中</p>
+                <strong class="stat-value" th:text="${stats.maintenance}">5</strong>
+                <small class="stat-hint">设备检修，暂不开放</small>
+            </article>
+        </section>
+
+        <form class="filter-bar" method="get"
+              th:action="${adminMode} ? @{/admin/classrooms} : @{/classrooms}">
+            <select name="floorNo">
+                <option value="">全部楼层</option>
+                <option th:each="f : ${floors}" th:value="${f}" th:text="${f + ' 层'}"
+                        th:selected="${floorNo != null and floorNo == f}">1 层</option>
+            </select>
+            <select name="status">
+                <option value="">全部状态</option>
+                <option value="FREE" th:selected="${status == 'FREE'}">空闲</option>
+                <option value="IN_USE" th:selected="${status == 'IN_USE'}">使用中</option>
+                <option value="MAINTENANCE" th:selected="${status == 'MAINTENANCE'}">维护中</option>
+            </select>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="教室编号 / 类型，如 1101"/>
+            <button type="submit" class="btn btn-primary">查询</button>
+            <a class="btn btn-ghost" th:href="${adminMode} ? @{/admin/classrooms} : @{/classrooms}">重置</a>
+        </form>
+
+        <div class="form-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>教室分布</h3>
+                    <span class="tag" th:text="${'筛选结果 ' + #lists.size(classrooms) + ' 间 · 其中空闲 ' + freeCount + ' 间'}">
+                        筛选结果 0 间
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="room-grid" th:if="${not #lists.isEmpty(classrooms)}">
+                        <article class="room-card" th:each="room : ${classrooms}"
+                                 th:classappend="${room.status == 'FREE' ? 'room-free' : (room.status == 'IN_USE' ? 'room-busy' : 'room-fix')}">
+                            <div class="room-head">
+                                <strong class="room-code" th:text="${room.roomCode}">1101</strong>
+                                <span th:class="${room.statusBadge}" th:text="${room.statusText}">空闲</span>
+                            </div>
+                            <p class="room-name" th:text="${room.buildingName + ' ' + room.floorText}">一号教学楼 1 层</p>
+                            <ul class="room-meta">
+                                <li><span>容纳人数</span><strong th:text="${room.capacity + ' 人'}">60 人</strong></li>
+                                <li><span>教室类型</span><strong th:text="${room.mediaType != null ? room.mediaType : '普通教室'}">多媒体教室</strong></li>
+                                <li th:if="${room.remark != null and !room.remark.isEmpty()}">
+                                    <span>备注</span><strong th:text="${room.remark}">备注</strong>
+                                </li>
+                            </ul>
+
+                            <div class="room-actions" th:if="${adminMode}">
+                                <form class="inline-form" th:if="${room.status != 'FREE'}"
+                                      th:action="@{/admin/classrooms/{id}/status(id=${room.id})}" method="post">
+                                    <input type="hidden" name="status" value="FREE"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm">设为空闲</button>
+                                </form>
+                                <form class="inline-form" th:if="${room.status != 'IN_USE'}"
+                                      th:action="@{/admin/classrooms/{id}/status(id=${room.id})}" method="post">
+                                    <input type="hidden" name="status" value="IN_USE"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm">设为使用中</button>
+                                </form>
+                                <form class="inline-form" th:if="${room.status != 'MAINTENANCE'}"
+                                      th:action="@{/admin/classrooms/{id}/status(id=${room.id})}" method="post">
+                                    <input type="hidden" name="status" value="MAINTENANCE"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm">维护登记</button>
+                                </form>
+                                <a class="btn btn-ghost btn-sm"
+                                   th:href="@{/admin/classrooms(edit=${room.id},floorNo=${floorNo},status=${status},keyword=${keyword})}">编辑</a>
+                                <form class="inline-form" th:action="@{/admin/classrooms/{id}/delete(id=${room.id})}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            th:attr="data-confirm=${'确认删除教室 ' + room.roomCode + ' 吗？'}">删除</button>
+                                </form>
+                            </div>
+                        </article>
+                    </div>
+                    <p class="empty" th:if="${#lists.isEmpty(classrooms)}">暂无符合条件的教室，请调整筛选条件</p>
+                </div>
+            </section>
+
+            <aside class="side-column" th:if="${adminMode}">
+                <section class="card">
+                    <div class="card-header">
+                        <h3 th:text="${classroomForm.id == null ? '新增教室' : '编辑教室'}">新增教室</h3>
+                        <a class="btn btn-ghost btn-sm" th:if="${classroomForm.id != null}"
+                           th:href="@{/admin/classrooms}">取消编辑</a>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/classrooms/save}" th:object="${classroomForm}" method="post"
+                              class="form-stack">
+                            <input type="hidden" th:field="*{id}"/>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="floorNo">楼层</label>
+                                    <select id="floorNo" th:field="*{floorNo}">
+                                        <option value="">请选择</option>
+                                        <option th:each="f : ${floors}" th:value="${f}" th:text="${f + ' 层'}">1 层</option>
+                                    </select>
+                                    <p class="field-error" th:if="${#fields.hasErrors('floorNo')}" th:errors="*{floorNo}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="roomNo">房间序号</label>
+                                    <input id="roomNo" type="number" min="1" max="20" th:field="*{roomNo}"
+                                           placeholder="1 ~ 20"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('roomNo')}" th:errors="*{roomNo}"></p>
+                                </div>
+                            </div>
+                            <p class="form-hint">编号将自动按「1 + 楼层 + 两位序号」生成，例如 1 层 1 号 → 1101</p>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="capacity">容纳人数</label>
+                                    <input id="capacity" type="number" min="1" max="300" th:field="*{capacity}"
+                                           placeholder="如 60"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('capacity')}"
+                                       th:errors="*{capacity}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="mediaType">教室类型</label>
+                                    <select id="mediaType" th:field="*{mediaType}">
+                                        <option th:each="t : ${mediaTypes}" th:value="${t}" th:text="${t}">多媒体教室</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-item">
+                                <label for="roomStatus">使用状态</label>
+                                <select id="roomStatus" th:field="*{status}">
+                                    <option value="FREE">空闲</option>
+                                    <option value="IN_USE">使用中</option>
+                                    <option value="MAINTENANCE">维护中</option>
+                                </select>
+                            </div>
+
+                            <div class="form-item">
+                                <label for="remark">备注</label>
+                                <input id="remark" type="text" th:field="*{remark}" placeholder="如 靠近东侧楼梯"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('remark')}" th:errors="*{remark}"></p>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block"
+                                    th:text="${classroomForm.id == null ? '添加教室' : '保存修改'}">添加教室</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header"><h3>编号说明</h3></div>
+                    <div class="card-body">
+                        <ul class="tip-list">
+                            <li><strong>1101</strong> 一号教学楼 · 1 层 · 第 01 间</li>
+                            <li><strong>1315</strong> 一号教学楼 · 3 层 · 第 15 间</li>
+                            <li><strong>1520</strong> 一号教学楼 · 5 层 · 第 20 间</li>
+                        </ul>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

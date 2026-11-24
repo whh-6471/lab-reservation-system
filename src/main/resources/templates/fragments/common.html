@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' · 实验室预约管理系统'">实验室预约管理系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+
+<!-- 侧边导航 -->
+<aside class="sidebar" th:fragment="sidebar">
+    <div class="brand">
+        <span class="brand-mark">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path d="M9 3h6v2h-1v5.2l4.6 8.1A2 2 0 0 1 16.8 21H7.2a2 2 0 0 1-1.8-2.7L10 10.2V5H9V3z"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M8.4 15h7.2" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+        </span>
+        <span class="brand-text">
+            <strong>实验室预约</strong>
+            <small>LAB RESERVATION</small>
+        </span>
+    </div>
+
+    <nav class="nav">
+        <!-- 学生 -->
+        <div class="nav-group" th:if="${loginUser != null and loginUser.role == 'STUDENT'}">
+            <p class="nav-group-title">学生服务</p>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/student/home')} ? 'active'"
+               th:href="@{/student/home}">首页概览</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/reservations/new')} ? 'active'"
+               th:href="@{/reservations/new}">预约实验室</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/reservations/my')} ? 'active'"
+               th:href="@{/reservations/my}">我的预约</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/equipment')} ? 'active'"
+               th:href="@{/equipment}">设备台账</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/classrooms')} ? 'active'"
+               th:href="@{/classrooms}">空教室查询</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/profile')} ? 'active'"
+               th:href="@{/profile}">个人中心</a>
+        </div>
+
+        <!-- 教师 -->
+        <div class="nav-group" th:if="${loginUser != null and loginUser.role == 'TEACHER'}">
+            <p class="nav-group-title">教师工作台</p>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/teacher/audit')} ? 'active'"
+               th:href="@{/teacher/audit}">预约审核</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/teacher/reservations')} ? 'active'"
+               th:href="@{/teacher/reservations}">全部预约</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/reservations/new')} ? 'active'"
+               th:href="@{/reservations/new}">发起预约</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/reservations/my')} ? 'active'"
+               th:href="@{/reservations/my}">我的预约</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/equipment')} ? 'active'"
+               th:href="@{/equipment}">设备台账</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/classrooms')} ? 'active'"
+               th:href="@{/classrooms}">空教室查询</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/profile')} ? 'active'"
+               th:href="@{/profile}">个人中心</a>
+        </div>
+
+        <!-- 管理员 -->
+        <div class="nav-group" th:if="${loginUser != null and loginUser.role == 'ADMIN'}">
+            <p class="nav-group-title">系统管理</p>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/dashboard')} ? 'active'"
+               th:href="@{/admin/dashboard}">数据看板</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/reservations')} ? 'active'"
+               th:href="@{/admin/reservations}">全部预约</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/labs')} ? 'active'"
+               th:href="@{/admin/labs}">实验室管理</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/equipment')} ? 'active'"
+               th:href="@{/admin/equipment}">设备台账</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/classrooms')} ? 'active'"
+               th:href="@{/admin/classrooms}">教室管理</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/classrooms')} ? 'active'"
+               th:href="@{/classrooms}">空教室查询</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/users')} ? 'active'"
+               th:href="@{/admin/users}">用户管理</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/announcements')} ? 'active'"
+               th:href="@{/admin/announcements}">公告管理</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/admin/settings')} ? 'active'"
+               th:href="@{/admin/settings}">预约规则</a>
+            <a class="nav-item" th:classappend="${currentUri.startsWith('/profile')} ? 'active'"
+               th:href="@{/profile}">个人中心</a>
+        </div>
+    </nav>
+
+    <div class="sidebar-foot">
+        <p>高校实验室管理平台</p>
+        <small>© 2026 Campus Lab</small>
+    </div>
+</aside>
+
+<!-- 顶部栏 -->
+<header class="topbar" th:fragment="topbar(title)">
+    <div class="topbar-left">
+        <h1 class="page-title" th:text="${title}">页面标题</h1>
+        <p class="page-sub">实验室预约管理系统</p>
+    </div>
+    <div class="topbar-right">
+        <div class="user-box" th:if="${loginUser != null}">
+            <span class="avatar" th:text="${#strings.substring(loginUser.realName, 0, 1)}">张</span>
+            <div class="user-meta">
+                <strong th:text="${loginUser.realName}">姓名</strong>
+                <small th:text="${loginUser.roleText + (loginUser.department != null ? ' · ' + loginUser.department : '')}">角色</small>
+            </div>
+        </div>
+        <a class="btn btn-ghost btn-sm" th:href="@{/profile}">个人中心</a>
+        <a class="btn btn-ghost btn-sm" th:href="@{/logout}">退出登录</a>
+    </div>
+</header>
+
+<!-- 提示消息 -->
+<div th:fragment="alerts">
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+</div>
+
+</body>
+</html>

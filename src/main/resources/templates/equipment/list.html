@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('设备台账')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('设备台账')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <form class="filter-bar" method="get" th:action="${adminMode} ? @{/admin/equipment} : @{/equipment}">
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="设备名称 / 编号 / 型号"/>
+            <select name="labId">
+                <option value="">全部实验室</option>
+                <option th:each="lab : ${labs}" th:value="${lab.id}" th:text="${lab.name}"
+                        th:selected="${labId != null and labId == lab.id}">实验室</option>
+            </select>
+            <select name="category">
+                <option value="">全部分类</option>
+                <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"
+                        th:selected="${category == c}">分类</option>
+            </select>
+            <select name="status">
+                <option value="">全部状态</option>
+                <option value="NORMAL" th:selected="${status == 'NORMAL'}">正常</option>
+                <option value="REPAIRING" th:selected="${status == 'REPAIRING'}">维修中</option>
+                <option value="SCRAPPED" th:selected="${status == 'SCRAPPED'}">已报废</option>
+            </select>
+            <button type="submit" class="btn btn-primary">查询</button>
+            <a class="btn btn-ghost" th:href="${adminMode} ? @{/admin/equipment} : @{/equipment}">重置</a>
+        </form>
+
+        <div class="form-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>设备明细</h3>
+                    <span class="tag" th:text="${'共 ' + pageData.totalElements + ' 项'}">共 0 项</span>
+                </div>
+                <div class="table-wrap" th:if="${not #lists.isEmpty(equipments)}">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>设备名称</th>
+                            <th>编号 / 型号</th>
+                            <th>所属实验室</th>
+                            <th>分类</th>
+                            <th>数量</th>
+                            <th>购置日期</th>
+                            <th>状态</th>
+                            <th class="col-actions" th:if="${adminMode}">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${equipments}">
+                            <td><strong th:text="${item.name}">设备名称</strong></td>
+                            <td>
+                                <span th:text="${item.code}">编号</span>
+                                <small class="cell-sub" th:text="${item.model != null ? item.model : '-'}">型号</small>
+                            </td>
+                            <td th:text="${item.labName != null ? item.labName : '-'}">实验室</td>
+                            <td th:text="${item.category != null ? item.category : '-'}">分类</td>
+                            <td th:text="${item.quantity}">1</td>
+                            <td th:text="${item.purchaseDateText}">2022-09-01</td>
+                            <td><span th:class="${item.statusBadge}" th:text="${item.statusText}">正常</span></td>
+                            <td class="col-actions" th:if="${adminMode}">
+                                <a class="btn btn-ghost btn-sm"
+                                   th:href="@{/admin/equipment(edit=${item.id},keyword=${keyword},labId=${labId},category=${category},status=${status},page=${page})}">编辑</a>
+                                <form class="inline-form" th:if="${item.status != 'REPAIRING' and item.status != 'SCRAPPED'}"
+                                      th:action="@{/admin/equipment/{id}/status(id=${item.id})}" method="post">
+                                    <input type="hidden" name="status" value="REPAIRING"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm">维修登记</button>
+                                </form>
+                                <form class="inline-form" th:if="${item.status == 'REPAIRING'}"
+                                      th:action="@{/admin/equipment/{id}/status(id=${item.id})}" method="post">
+                                    <input type="hidden" name="status" value="NORMAL"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm">恢复正常</button>
+                                </form>
+                                <form class="inline-form" th:if="${item.status != 'SCRAPPED'}"
+                                      th:action="@{/admin/equipment/{id}/status(id=${item.id})}" method="post">
+                                    <input type="hidden" name="status" value="SCRAPPED"/>
+                                    <button type="submit" class="btn btn-ghost btn-sm" data-confirm="确认将该设备标记为报废吗？">报废登记</button>
+                                </form>
+                                <form class="inline-form" th:action="@{/admin/equipment/{id}/delete(id=${item.id})}" method="post">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            data-confirm="确定从台账中删除该设备吗？">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="empty" th:if="${#lists.isEmpty(equipments)}">暂无符合条件的设备记录</p>
+
+                <div class="pager" th:if="${pageData.totalPages > 1 and adminMode}">
+                    <a th:if="${pageData.hasPrevious()}"
+                       th:href="@{/admin/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${pageData.number - 1})}">上一页</a>
+                    <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                       th:href="@{/admin/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${i})}"
+                       th:text="${i + 1}">1</a>
+                    <a th:if="${pageData.hasNext()}"
+                       th:href="@{/admin/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${pageData.number + 1})}">下一页</a>
+                </div>
+
+                <div class="pager" th:if="${pageData.totalPages > 1 and !adminMode}">
+                    <a th:if="${pageData.hasPrevious()}"
+                       th:href="@{/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${pageData.number - 1})}">上一页</a>
+                    <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                       th:href="@{/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${i})}"
+                       th:text="${i + 1}">1</a>
+                    <a th:if="${pageData.hasNext()}"
+                       th:href="@{/equipment(keyword=${keyword},labId=${labId},category=${category},status=${status},page=${pageData.number + 1})}">下一页</a>
+                </div>
+            </section>
+
+            <aside class="side-column" th:if="${adminMode}">
+                <section class="card">
+                    <div class="card-header">
+                        <h3 th:text="${equipmentForm.id == null ? '新增设备' : '编辑设备'}">新增设备</h3>
+                        <a class="btn btn-ghost btn-sm" th:if="${equipmentForm.id != null}"
+                           th:href="@{/admin/equipment}">取消编辑</a>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/equipment/save}" th:object="${equipmentForm}" method="post"
+                              class="form-stack">
+                            <input type="hidden" th:field="*{id}"/>
+
+                            <div class="form-item">
+                                <label for="labId">所属实验室</label>
+                                <select id="labId" th:field="*{labId}">
+                                    <option value="">请选择实验室</option>
+                                    <option th:each="lab : ${labs}" th:value="${lab.id}"
+                                            th:text="${lab.name + '（' + lab.code + '）'}">实验室</option>
+                                </select>
+                                <p class="field-error" th:if="${#fields.hasErrors('labId')}" th:errors="*{labId}"></p>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="eqName">设备名称</label>
+                                    <input id="eqName" type="text" th:field="*{name}" placeholder="如 数字示波器"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="eqCode">设备编号</label>
+                                    <input id="eqCode" type="text" th:field="*{code}" placeholder="如 EQ-A201-01"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="model">规格型号</label>
+                                    <input id="model" type="text" th:field="*{model}" placeholder="如 Dell OptiPlex 7090"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('model')}" th:errors="*{model}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="category">设备分类</label>
+                                    <input id="category" type="text" th:field="*{category}" placeholder="如 计算机类"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('category')}"
+                                       th:errors="*{category}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="purchaseDate">购置日期</label>
+                                    <input id="purchaseDate" type="date" th:field="*{purchaseDate}"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('purchaseDate')}"
+                                       th:errors="*{purchaseDate}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="quantity">数量</label>
+                                    <input id="quantity" type="number" min="1" th:field="*{quantity}"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('quantity')}"
+                                       th:errors="*{quantity}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-item">
+                                <label for="eqStatus">设备状态</label>
+                                <select id="eqStatus" th:field="*{status}">
+                                    <option value="NORMAL">正常</option>
+                                    <option value="REPAIRING">维修中</option>
+                                    <option value="SCRAPPED">已报废</option>
+                                </select>
+                                <p class="field-error" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></p>
+                            </div>
+
+                            <div class="form-item">
+                                <label for="remark">备注</label>
+                                <textarea id="remark" rows="2" th:field="*{remark}" placeholder="可选，如配套显示器说明"></textarea>
+                                <p class="field-error" th:if="${#fields.hasErrors('remark')}" th:errors="*{remark}"></p>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"
+                                        th:text="${equipmentForm.id == null ? '录入台账' : '保存修改'}">录入台账</button>
+                                <a class="btn btn-ghost" th:href="@{/admin/equipment}">重置</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

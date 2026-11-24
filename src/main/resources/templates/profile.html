@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('个人中心')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('个人中心')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <section class="profile-head">
+            <div class="profile-avatar" th:text="${#strings.substring(user.realName, 0, 1)}">张</div>
+            <div class="profile-info">
+                <h2 th:text="${user.realName}">姓名</h2>
+                <p>
+                    <span class="badge badge-approved" th:text="${user.roleText}">学生</span>
+                    <span th:text="${user.department != null ? user.department : '未填写院系'}">院系</span>
+                    <span th:text="${user.studentNo != null ? '学号/工号：' + user.studentNo : '未填写学号'}">学号</span>
+                </p>
+            </div>
+        </section>
+
+        <div class="split-grid">
+            <section class="card">
+                <div class="card-header">
+                    <h3>个人资料</h3>
+                    <span class="tag" th:text="${'账号：' + user.username}">账号</span>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/profile}" th:object="${profileForm}" method="post" class="form-stack">
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label for="realName">真实姓名</label>
+                                <input id="realName" type="text" th:field="*{realName}"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('realName')}"
+                                   th:errors="*{realName}"></p>
+                            </div>
+                            <div class="form-item">
+                                <label for="studentNo">学号 / 工号</label>
+                                <input id="studentNo" type="text" th:field="*{studentNo}"/>
+                            </div>
+                        </div>
+                        <div class="form-item">
+                            <label for="department">所属院系</label>
+                            <input id="department" type="text" th:field="*{department}"/>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label for="phone">联系电话</label>
+                                <input id="phone" type="text" th:field="*{phone}"/>
+                            </div>
+                            <div class="form-item">
+                                <label for="email">电子邮箱</label>
+                                <input id="email" type="email" th:field="*{email}"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">保存资料</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="side-column">
+                <section class="card">
+                    <div class="card-header">
+                        <h3>修改密码</h3>
+                        <span class="tag">安全设置</span>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/profile/password}" th:object="${passwordForm}" method="post"
+                              class="form-stack">
+                            <div class="form-item">
+                                <label for="oldPassword">原密码</label>
+                                <input id="oldPassword" type="password" th:field="*{oldPassword}"
+                                       autocomplete="current-password"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('oldPassword')}"
+                                   th:errors="*{oldPassword}"></p>
+                            </div>
+                            <div class="form-item">
+                                <label for="newPassword">新密码</label>
+                                <input id="newPassword" type="password" th:field="*{newPassword}"
+                                       placeholder="6-20 个字符" autocomplete="new-password"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('newPassword')}"
+                                   th:errors="*{newPassword}"></p>
+                            </div>
+                            <div class="form-item">
+                                <label for="confirmPassword">确认新密码</label>
+                                <input id="confirmPassword" type="password" th:field="*{confirmPassword}"
+                                       autocomplete="new-password"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('confirmPassword')}"
+                                   th:errors="*{confirmPassword}"></p>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"
+                                        data-confirm="修改密码后需要重新登录，确定继续吗？">修改密码</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h3>账号信息</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="desc-grid">
+                            <div class="desc-item"><span>登录账号</span><b th:text="${user.username}">账号</b></div>
+                            <div class="desc-item"><span>账号角色</span><b th:text="${user.roleText}">角色</b></div>
+                            <div class="desc-item"><span>账号状态</span><b th:text="${user.statusText}">启用</b></div>
+                            <div class="desc-item"><span>注册时间</span><b th:text="${user.createTimeText}">时间</b></div>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

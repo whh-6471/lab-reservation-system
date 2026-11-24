@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('用户管理')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('用户管理')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <form class="filter-bar" method="get" th:action="@{/admin/users}">
+            <select name="role">
+                <option value="">全部角色</option>
+                <option value="STUDENT" th:selected="${role == 'STUDENT'}">学生</option>
+                <option value="TEACHER" th:selected="${role == 'TEACHER'}">教师</option>
+                <option value="ADMIN" th:selected="${role == 'ADMIN'}">管理员</option>
+            </select>
+            <select name="status">
+                <option value="">全部状态</option>
+                <option value="1" th:selected="${status != null and status == 1}">启用</option>
+                <option value="0" th:selected="${status != null and status == 0}">禁用</option>
+            </select>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="姓名 / 账号 / 学号"/>
+            <button type="submit" class="btn btn-primary">查询</button>
+            <a class="btn btn-ghost" th:href="@{/admin/users}">重置</a>
+        </form>
+
+        <div class="form-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>账号列表</h3>
+                    <span class="tag" th:text="${'共 ' + pageData.totalElements + ' 个账号'}">共 0 个账号</span>
+                </div>
+                <div class="table-wrap" th:if="${not #lists.isEmpty(users)}">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>账号</th>
+                            <th>姓名 / 角色</th>
+                            <th>学号 / 工号</th>
+                            <th>院系</th>
+                            <th>联系方式</th>
+                            <th>状态</th>
+                            <th class="col-actions">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${users}">
+                            <td>
+                                <strong th:text="${u.username}">账号</strong>
+                                <small class="cell-sub" th:text="${u.createTimeText}">创建时间</small>
+                            </td>
+                            <td>
+                                <span th:text="${u.realName}">姓名</span>
+                                <small class="cell-sub" th:text="${u.roleText}">角色</small>
+                            </td>
+                            <td th:text="${u.studentNo != null ? u.studentNo : '-'}">学号</td>
+                            <td th:text="${u.department != null ? u.department : '-'}">院系</td>
+                            <td>
+                                <span th:text="${u.phone != null ? u.phone : '-'}">电话</span>
+                                <small class="cell-sub" th:text="${u.email != null ? u.email : '-'}">邮箱</small>
+                            </td>
+                            <td>
+                                <span th:class="${u.status != null and u.status == 1 ? 'badge badge-approved' : 'badge badge-cancelled'}"
+                                      th:text="${u.statusText}">启用</span>
+                            </td>
+                            <td class="col-actions">
+                                <a class="btn btn-ghost btn-sm"
+                                   th:href="@{/admin/users(edit=${u.id},role=${role},keyword=${keyword},status=${status},page=${page})}">编辑</a>
+                                <form class="inline-form" th:action="@{/admin/users/{id}/toggle(id=${u.id})}" method="post">
+                                    <button type="submit" class="btn btn-ghost btn-sm"
+                                            th:text="${u.status != null and u.status == 1 ? '禁用' : '启用'}">禁用</button>
+                                </form>
+                                <form class="inline-form" th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            data-confirm="确定删除该账号吗？存在预约记录的用户无法删除。">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="empty" th:if="${#lists.isEmpty(users)}">暂无符合条件的用户</p>
+
+                <div class="pager" th:if="${pageData.totalPages > 1}">
+                    <a th:if="${pageData.hasPrevious()}"
+                       th:href="@{/admin/users(role=${role},keyword=${keyword},status=${status},page=${pageData.number - 1})}">上一页</a>
+                    <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                       th:href="@{/admin/users(role=${role},keyword=${keyword},status=${status},page=${i})}"
+                       th:text="${i + 1}">1</a>
+                    <a th:if="${pageData.hasNext()}"
+                       th:href="@{/admin/users(role=${role},keyword=${keyword},status=${status},page=${pageData.number + 1})}">下一页</a>
+                </div>
+            </section>
+
+            <aside class="side-column">
+                <section class="card">
+                    <div class="card-header">
+                        <h3 th:text="${userForm.id == null ? '新增用户' : '编辑用户'}">新增用户</h3>
+                        <a class="btn btn-ghost btn-sm" th:if="${userForm.id != null}" th:href="@{/admin/users}">取消编辑</a>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/users/save}" th:object="${userForm}" method="post" class="form-stack">
+                            <input type="hidden" th:field="*{id}"/>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="username">登录账号</label>
+                                    <input id="username" type="text" th:field="*{username}" placeholder="3-20 个字符"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('username')}"
+                                       th:errors="*{username}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="realName">真实姓名</label>
+                                    <input id="realName" type="text" th:field="*{realName}" placeholder="请输入姓名"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('realName')}"
+                                       th:errors="*{realName}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="password">登录密码</label>
+                                    <input id="password" type="password" th:field="*{password}"
+                                           th:placeholder="${userForm.id == null ? '新增必填（6-20 位）' : '留空表示不修改'}"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('password')}"
+                                       th:errors="*{password}"></p>
+                                </div>
+                                <div class="form-item">
+                                    <label for="role">角色</label>
+                                    <select id="role" th:field="*{role}">
+                                        <option value="STUDENT">学生</option>
+                                        <option value="TEACHER">教师</option>
+                                        <option value="ADMIN">管理员</option>
+                                    </select>
+                                    <p class="field-error" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="studentNo">学号 / 工号</label>
+                                    <input id="studentNo" type="text" th:field="*{studentNo}" placeholder="如 2023001"/>
+                                </div>
+                                <div class="form-item">
+                                    <label for="department">所属院系</label>
+                                    <input id="department" type="text" th:field="*{department}" placeholder="如 计算机学院"/>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label for="phone">联系电话</label>
+                                    <input id="phone" type="text" th:field="*{phone}" placeholder="请输入手机号"/>
+                                </div>
+                                <div class="form-item">
+                                    <label for="email">电子邮箱</label>
+                                    <input id="email" type="email" th:field="*{email}" placeholder="name@campus.edu.cn"/>
+                                    <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"
+                                        th:text="${userForm.id == null ? '新增用户' : '保存修改'}">新增用户</button>
+                                <a class="btn btn-ghost" th:href="@{/admin/users}">重置</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

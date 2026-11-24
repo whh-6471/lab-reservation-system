@@ -1,0 +1,22 @@
+package com.campus.lab.form;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+/**
+ * 修改密码表单
+ */
+@Data
+public class PasswordForm {
+
+    @NotBlank(message = "请输入原密码")
+    private String oldPassword;
+
+    @NotBlank(message = "请输入新密码")
+    @Size(min = 6, max = 20, message = "新密码长度需为 6-20 个字符")
+    private String newPassword;
+
+    @NotBlank(message = "请再次输入新密码")
+    private String confirmPassword;
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('学生首页')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('首页概览')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <section class="hero">
+            <div class="hero-copy">
+                <span class="hero-eyebrow">学生服务 · Student</span>
+                <h2>你好，<span th:text="${loginUser.realName}">李明</span></h2>
+                <p>在这里查看实验室开放情况、预约空闲时段，并随时掌握预约审核进度。</p>
+                <div class="hero-actions">
+                    <a class="btn btn-light" th:href="@{/reservations/new}">预约实验室</a>
+                    <a class="btn btn-outline-light" th:href="@{/reservations/my}">我的预约</a>
+                    <a class="btn btn-outline-light" th:href="@{/equipment}">设备台账</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <strong th:text="${config.maxDurationHours}">4</strong>
+                    <span>单次最长（小时）</span>
+                </div>
+                <div class="hero-stat">
+                    <strong th:text="${config.advanceDays}">7</strong>
+                    <span>最多提前（天）</span>
+                </div>
+                <div class="hero-stat">
+                    <strong th:text="${labs.size()}">5</strong>
+                    <span>实验室总数</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="split-grid">
+            <section class="card">
+                <div class="card-header">
+                    <h3>系统公告</h3>
+                    <span class="tag">最新通知</span>
+                </div>
+                <div class="card-body">
+                    <div class="notice-list" th:if="${not #lists.isEmpty(announcements)}">
+                        <article class="notice-item" th:each="a : ${announcements}">
+                            <h4 th:text="${a.title}">公告标题</h4>
+                            <p th:text="${a.summary}">公告内容</p>
+                            <small th:text="${a.publisher + ' · ' + a.createTimeText}">发布信息</small>
+                        </article>
+                    </div>
+                    <p class="empty" th:if="${#lists.isEmpty(announcements)}">暂无公告</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h3>预约规则</h3>
+                    <span class="tag">请遵守</span>
+                </div>
+                <div class="card-body">
+                    <p class="rule-text" th:text="${config.bookingRules}">预约规则说明</p>
+                </div>
+            </section>
+        </div>
+
+        <section class="section">
+            <div class="section-head">
+                <div>
+                    <h3>实验室一览</h3>
+                    <p>点击实验室可查看当日空闲时段与设备配置</p>
+                </div>
+            </div>
+
+            <div class="lab-grid">
+                <article class="lab-card" th:each="lab : ${labs}">
+                    <div class="lab-card-head">
+                        <span class="lab-code" th:text="${lab.code}">LAB-A201</span>
+                        <span th:class="${lab.statusBadge}" th:text="${lab.statusText}">开放中</span>
+                    </div>
+                    <h4 th:text="${lab.name}">计算机实验室 A201</h4>
+                    <ul class="lab-meta">
+                        <li><span>位置</span><b th:text="${lab.location}">实验楼A座 2层</b></li>
+                        <li><span>容量</span><b th:text="${lab.capacity + ' 人'}">40 人</b></li>
+                        <li><span>开放</span><b th:text="${lab.openRangeText}">08:00 - 20:00</b></li>
+                    </ul>
+                    <p class="lab-desc" th:text="${lab.description}">实验室简介</p>
+                    <div class="lab-card-actions">
+                        <a class="btn btn-ghost btn-sm" th:href="@{/labs/{id}(id=${lab.id})}">查看时段</a>
+                        <a class="btn btn-primary btn-sm" th:if="${lab.available}"
+                           th:href="@{/reservations/new(labId=${lab.id})}">立即预约</a>
+                        <span class="btn btn-sm btn-disabled" th:unless="${lab.available}">暂不可约</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

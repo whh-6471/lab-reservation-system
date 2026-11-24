@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('实验室详情')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('实验室详情')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <nav class="breadcrumb">
+            <a th:if="${loginUser.role == 'STUDENT'}" th:href="@{/student/home}">首页</a>
+            <a th:if="${loginUser.role == 'TEACHER'}" th:href="@{/equipment}">设备台账</a>
+            <a th:if="${loginUser.role == 'ADMIN'}" th:href="@{/admin/labs}">实验室管理</a>
+            <span>/</span>
+            <b th:text="${lab.name}">实验室名称</b>
+        </nav>
+
+        <section class="detail-head">
+            <div>
+                <span class="lab-code" th:text="${lab.code}">LAB-A201</span>
+                <h2 th:text="${lab.name}">计算机实验室 A201</h2>
+                <p class="detail-meta">
+                    <span th:text="${lab.location}">位置</span>
+                    <span th:text="${'容量 ' + lab.capacity + ' 人'}">容量</span>
+                    <span th:text="${'开放 ' + lab.openRangeText}">开放时间</span>
+                </p>
+            </div>
+            <div class="detail-head-right">
+                <span th:class="${lab.statusBadge}" th:text="${lab.statusText}">开放中</span>
+                <a class="btn btn-primary"
+                   th:if="${loginUser.role != 'ADMIN' and lab.available}"
+                   th:href="@{/reservations/new(labId=${lab.id}, date=${schedule.date})}">预约该实验室</a>
+            </div>
+        </section>
+
+        <p class="muted" th:text="${lab.description}">实验室简介</p>
+
+        <section class="card">
+            <div class="card-header">
+                <h3>时段情况</h3>
+                <form class="inline-form" method="get" th:action="@{/labs/{id}(id=${lab.id})}">
+                    <label class="inline-label" for="date">选择日期</label>
+                    <input id="date" type="date" name="date" th:value="${schedule.date}"
+                           th:min="${today}" th:max="${maxDate}" required/>
+                    <button class="btn btn-primary btn-sm" type="submit">查看时段</button>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="slot-summary">
+                    <span>当天可预约时段：<b th:text="${schedule.availableCount}">0</b> 个</span>
+                    <div class="slot-legend">
+                        <span class="legend legend-free">可预约</span>
+                        <span class="legend legend-occupied">已占用</span>
+                        <span class="legend legend-ended">已结束</span>
+                    </div>
+                </div>
+                <div class="slot-grid">
+                    <div th:each="slot : ${schedule.slots}" th:class="${slot.stateClass}">
+                        <strong th:text="${slot.startText + ' - ' + slot.endText}">09:00 - 10:00</strong>
+                        <small th:text="${slot.stateText}">可预约</small>
+                    </div>
+                </div>
+                <p class="empty" th:if="${#lists.isEmpty(schedule.slots)}">该实验室暂无开放时段</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h3>实验室设备台账</h3>
+                <span class="tag" th:text="${#lists.size(equipments) + ' 项设备'}">设备数量</span>
+            </div>
+            <div class="table-wrap" th:if="${not #lists.isEmpty(equipments)}">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>设备名称</th>
+                        <th>设备编号</th>
+                        <th>规格型号</th>
+                        <th>分类</th>
+                        <th>数量</th>
+                        <th>状态</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${equipments}">
+                        <td th:text="${item.name}">设备名称</td>
+                        <td th:text="${item.code}">编号</td>
+                        <td th:text="${item.model}">型号</td>
+                        <td th:text="${item.category}">分类</td>
+                        <td th:text="${item.quantity}">1</td>
+                        <td><span th:class="${item.statusBadge}" th:text="${item.statusText}">正常</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="empty" th:if="${#lists.isEmpty(equipments)}">暂无设备记录</p>
+        </section>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

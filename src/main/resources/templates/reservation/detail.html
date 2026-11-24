@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('预约详情')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('预约详情')}"></header>
+
+    <div class="content">
+        <nav class="breadcrumb">
+            <a th:href="${backUrl}">返回列表</a>
+            <span>/</span>
+            <b th:text="${reservation.title}">实验名称</b>
+        </nav>
+
+        <section class="detail-head">
+            <div>
+                <span th:class="${reservation.statusBadge}" th:text="${reservation.statusText}">状态</span>
+                <h2 th:text="${reservation.title}">实验名称</h2>
+                <p class="detail-meta">
+                    <span th:text="${'申请人：' + reservation.applicantName}">申请人</span>
+                    <span th:text="${'实验室：' + reservation.labName}">实验室</span>
+                    <span th:text="${'提交时间：' + reservation.createTimeText}">提交时间</span>
+                </p>
+            </div>
+        </section>
+
+        <div class="alert alert-error" th:if="${reservation.status == 'REJECTED' and reservation.rejectReason != null}">
+            驳回理由：<span th:text="${reservation.rejectReason}">驳回理由</span>
+        </div>
+        <div class="alert alert-warn" th:if="${reservation.cancelReason != null}">
+            取消说明：<span th:text="${reservation.cancelReason}">取消说明</span>
+        </div>
+
+        <section class="card">
+            <div class="card-header">
+                <h3>预约信息</h3>
+                <a class="btn btn-ghost btn-sm" th:href="@{/reservations/{id}(id=${reservation.id})}">刷新</a>
+            </div>
+            <div class="card-body">
+                <div class="desc-grid">
+                    <div class="desc-item"><span>预约实验室</span><b th:text="${reservation.labName}">实验室</b></div>
+                    <div class="desc-item"><span>实验室位置</span><b th:text="${lab.location}">位置</b></div>
+                    <div class="desc-item"><span>预约日期</span><b th:text="${reservation.reservationDateText}">日期</b></div>
+                    <div class="desc-item"><span>预约时段</span><b th:text="${reservation.timeRangeText}">时间</b></div>
+                    <div class="desc-item"><span>预约时长</span><b th:text="${reservation.durationText}">时长</b></div>
+                    <div class="desc-item"><span>参与人数</span><b th:text="${reservation.participantCount + ' 人'}">人数</b></div>
+                    <div class="desc-item"><span>申请人</span><b th:text="${reservation.applicantName}">姓名</b></div>
+                    <div class="desc-item"><span>申请人角色</span><b th:text="${reservation.applicantRoleText}">学生</b></div>
+                    <div class="desc-item"><span>备注</span><b th:text="${reservation.remark != null ? reservation.remark : '无'}">备注</b></div>
+                </div>
+                <div class="desc-block">
+                    <span>实验用途 / 实验内容</span>
+                    <p th:text="${reservation.purpose}">用途</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h3>审核记录</h3>
+                <span class="tag" th:text="${'审核人：' + (reservation.auditUserName != null ? reservation.auditUserName : '待审核')}">审核人</span>
+            </div>
+            <div class="card-body">
+                <div class="timeline" th:if="${not #lists.isEmpty(records)}">
+                    <div class="timeline-item" th:each="rec : ${records}">
+                        <span class="timeline-dot" th:classappend="${rec.action == 'APPROVE'} ? 'ok' : 'no'"></span>
+                        <div class="timeline-content">
+                            <strong th:text="${rec.actionText + ' · ' + rec.auditorName}">审核结果</strong>
+                            <small th:text="${rec.createTimeText}">审核时间</small>
+                            <p th:if="${rec.reason != null}" th:text="${'驳回理由：' + rec.reason}">理由</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty" th:if="${#lists.isEmpty(records)}">
+                    <p>该预约尚未审核，请耐心等待教师处理</p>
+                    <small>提交时间：<span th:text="${reservation.createTimeText}">-</span></small>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

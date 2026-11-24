@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('操作提示')}"></head>
+<body class="auth-body">
+<div class="error-wrap">
+    <div class="error-card">
+        <span class="error-code" th:text="${status != null ? status : '提示'}">提示</span>
+        <h1>操作未能完成</h1>
+        <p class="error-message" th:text="${message != null ? message : '页面不存在或您没有访问权限'}">
+            页面不存在或您没有访问权限
+        </p>
+        <div class="error-actions">
+            <a class="btn btn-primary" th:href="@{/}">返回首页</a>
+            <a class="btn btn-ghost" th:href="@{/login}">重新登录</a>
+        </div>
+        <p class="error-foot">如多次出现该提示，请联系实验室管理中心管理员</p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('全部预约')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('全部预约管理')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <form class="filter-bar" method="get"
+              th:action="${manageRole == 'ADMIN' ? '/admin/reservations' : '/teacher/reservations'}">
+            <select name="status">
+                <option value="">全部状态</option>
+                <option value="PENDING" th:selected="${status == 'PENDING'}">待审核</option>
+                <option value="APPROVED" th:selected="${status == 'APPROVED'}">已通过</option>
+                <option value="REJECTED" th:selected="${status == 'REJECTED'}">已驳回</option>
+                <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">已取消</option>
+                <option value="EXPIRED" th:selected="${status == 'EXPIRED'}">已过期</option>
+            </select>
+            <select name="labId">
+                <option value="">全部实验室</option>
+                <option th:each="lab : ${labs}" th:value="${lab.id}" th:text="${lab.name}"
+                        th:selected="${labId != null and labId == lab.id}">实验室</option>
+            </select>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="实验名称 / 申请人"/>
+            <input type="date" name="date" th:value="${date}"/>
+            <button type="submit" class="btn btn-primary">查询</button>
+            <a class="btn btn-ghost"
+               th:href="${manageRole == 'ADMIN' ? '/admin/reservations' : '/teacher/reservations'}">重置</a>
+        </form>
+
+        <form id="batchForm" class="batch-bar" th:if="${manageRole == 'ADMIN'}"
+              th:action="@{/admin/reservations/batch-cancel}" method="post">
+            <span class="batch-title">批量操作</span>
+            <input type="text" name="reason" placeholder="批量取消理由（可选，默认：管理员批量强制取消）"
+                   maxlength="255"/>
+            <button type="button" class="btn btn-danger btn-sm" data-batch-submit>批量强制取消</button>
+            <span class="muted">勾选下方记录后执行</span>
+        </form>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>预约记录</h3>
+                <span class="tag" th:text="${'共 ' + pageData.totalElements + ' 条'}">共 0 条</span>
+            </div>
+
+            <div class="table-wrap" th:if="${not #lists.isEmpty(reservations)}">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th class="col-check" th:if="${manageRole == 'ADMIN'}">
+                            <input type="checkbox" class="check-all" aria-label="全选"/>
+                        </th>
+                        <th>申请人</th>
+                        <th>实验室</th>
+                        <th>预约时间</th>
+                        <th>实验信息</th>
+                        <th>状态</th>
+                        <th>审核信息</th>
+                        <th class="col-actions">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${reservations}">
+                        <td th:if="${manageRole == 'ADMIN'}">
+                            <input type="checkbox" class="row-check" th:value="${r.id}" aria-label="选择预约"/>
+                        </td>
+                        <td>
+                            <strong th:text="${r.applicantName}">姓名</strong>
+                            <small class="cell-sub" th:text="${r.applicantRoleText}">角色</small>
+                        </td>
+                        <td>
+                            <span th:text="${r.labName}">实验室</span>
+                            <small class="cell-sub" th:text="${r.labLocation}">位置</small>
+                        </td>
+                        <td>
+                            <span th:text="${r.reservationDateText}">日期</span>
+                            <small class="cell-sub" th:text="${r.timeRangeText}">时间</small>
+                        </td>
+                        <td class="col-wide">
+                            <strong th:text="${r.title}">实验名称</strong>
+                            <small class="cell-sub" th:text="${r.purpose}">用途</small>
+                        </td>
+                        <td>
+                            <span th:class="${r.statusBadge}" th:text="${r.statusText}">状态</span>
+                            <small class="cell-sub" th:if="${r.rejectReason != null}"
+                                   th:text="${'驳回：' + r.rejectReason}">理由</small>
+                            <small class="cell-sub" th:if="${r.cancelReason != null}"
+                                   th:text="${'取消：' + r.cancelReason}">理由</small>
+                        </td>
+                        <td>
+                            <span th:text="${r.auditUserName != null ? r.auditUserName : '-'}">审核人</span>
+                            <small class="cell-sub" th:text="${r.auditTimeText}">审核时间</small>
+                        </td>
+                        <td class="col-actions">
+                            <a class="btn btn-ghost btn-sm" th:href="@{/reservations/{id}(id=${r.id})}">详情</a>
+                            <form class="inline-form"
+                                  th:if="${manageRole == 'ADMIN' and (r.status == 'PENDING' or r.status == 'APPROVED')}"
+                                  th:action="@{/admin/reservations/{id}/force-cancel(id=${r.id})}" method="post">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        data-confirm="确定强制取消该预约吗？">强制取消</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="empty" th:if="${#lists.isEmpty(reservations)}">暂无符合条件的预约记录</p>
+
+            <div class="pager" th:if="${pageData.totalPages > 1 and manageRole == 'ADMIN'}">
+                <a th:if="${pageData.hasPrevious()}"
+                   th:href="@{/admin/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number - 1})}">上一页</a>
+                <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                   th:href="@{/admin/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${i})}"
+                   th:text="${i + 1}">1</a>
+                <a th:if="${pageData.hasNext()}"
+                   th:href="@{/admin/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number + 1})}">下一页</a>
+            </div>
+
+            <div class="pager" th:if="${pageData.totalPages > 1 and manageRole == 'TEACHER'}">
+                <a th:if="${pageData.hasPrevious()}"
+                   th:href="@{/teacher/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number - 1})}">上一页</a>
+                <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                   th:href="@{/teacher/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${i})}"
+                   th:text="${i + 1}">1</a>
+                <a th:if="${pageData.hasNext()}"
+                   th:href="@{/teacher/reservations(status=${status},labId=${labId},keyword=${keyword},date=${date},page=${pageData.number + 1})}">下一页</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

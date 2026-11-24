@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('提交预约')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('提交实验室预约')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <div class="form-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>预约信息</h3>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/reservations/my}">我的预约</a>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/reservations}" th:object="${reservationForm}" method="post" class="form-stack">
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label for="labId">预约实验室</label>
+                                <select id="labId" th:field="*{labId}">
+                                    <option value="">请选择实验室</option>
+                                    <option th:each="lab : ${labs}" th:value="${lab.id}"
+                                            th:text="${lab.name + '（' + lab.code + '）'}">实验室名称</option>
+                                </select>
+                                <p class="field-error" th:if="${#fields.hasErrors('labId')}" th:errors="*{labId}"></p>
+                                <p class="field-hint" th:if="${#lists.isEmpty(labs)}">暂无可预约实验室</p>
+                            </div>
+                            <div class="form-item">
+                                <label for="reservationDate">预约日期</label>
+                                <input id="reservationDate" type="date" th:field="*{reservationDate}"
+                                       th:min="${today}" th:max="${maxDate}"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('reservationDate')}"
+                                   th:errors="*{reservationDate}"></p>
+                                <p class="field-hint">最多可提前 <span th:text="${config.advanceDays}">7</span> 天预约</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-item">
+                                <label for="startTime">开始时间</label>
+                                <input id="startTime" type="time" th:field="*{startTime}" step="900"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('startTime')}"
+                                   th:errors="*{startTime}"></p>
+                            </div>
+                            <div class="form-item">
+                                <label for="endTime">结束时间</label>
+                                <input id="endTime" type="time" th:field="*{endTime}" step="900"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('endTime')}"
+                                   th:errors="*{endTime}"></p>
+                            </div>
+                            <div class="form-item">
+                                <label for="participantCount">参与人数</label>
+                                <input id="participantCount" type="number" min="1" th:field="*{participantCount}"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('participantCount')}"
+                                   th:errors="*{participantCount}"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="title">实验名称</label>
+                            <input id="title" type="text" th:field="*{title}" placeholder="如：数据结构课程实验"/>
+                            <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="purpose">实验用途 / 实验内容</label>
+                            <textarea id="purpose" rows="4" th:field="*{purpose}"
+                                      placeholder="请简要说明实验目的、内容及所需设备"></textarea>
+                            <p class="field-error" th:if="${#fields.hasErrors('purpose')}" th:errors="*{purpose}"></p>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="remark">备注（可选）</label>
+                            <input id="remark" type="text" th:field="*{remark}" placeholder="如：需要提前开启空调 / 需要使用示波器"/>
+                            <p class="field-error" th:if="${#fields.hasErrors('remark')}" th:errors="*{remark}"></p>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">提交预约申请</button>
+                            <a class="btn btn-ghost" th:href="@{/student/home}">取消</a>
+                            <span class="muted">提交后状态为「待审核」，请等待教师审核</span>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="side-column">
+                <section class="card" th:if="${schedule != null}">
+                    <div class="card-header">
+                        <h3>当日时段参考</h3>
+                        <span class="tag" th:text="${schedule.dateText}">日期</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="field-hint">点击空闲时段可自动填入开始 / 结束时间</p>
+                        <div class="slot-grid slot-grid-sm">
+                            <button type="button" th:each="slot : ${schedule.slots}"
+                                    th:class="${slot.stateClass}"
+                                    th:disabled="${slot.occupied or slot.ended}"
+                                    th:attr="data-slot-start=${slot.startText},data-slot-end=${slot.endText}">
+                                <strong th:text="${slot.startText + ' - ' + slot.endText}">时段</strong>
+                                <small th:text="${slot.stateText}">状态</small>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h3>预约规则</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="rule-text" th:text="${config.bookingRules}">规则说明</p>
+                        <div class="rule-meta">
+                            <span>单次最长 <b th:text="${config.maxDurationHours + ' 小时'}">4 小时</b></span>
+                            <span>最多提前 <b th:text="${config.advanceDays + ' 天'}">7 天</b></span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('公告管理')}"></head>
+<body>
+<aside th:replace="~{fragments/common :: sidebar}"></aside>
+<div class="main">
+    <header th:replace="~{fragments/common :: topbar('公告管理')}"></header>
+
+    <div class="content">
+        <div th:replace="~{fragments/common :: alerts}"></div>
+
+        <div class="form-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>公告列表</h3>
+                    <span class="tag" th:text="${'共 ' + pageData.totalElements + ' 条'}">共 0 条</span>
+                </div>
+                <div class="table-wrap" th:if="${not #lists.isEmpty(announcements)}">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>公告标题 / 内容摘要</th>
+                            <th>发布人</th>
+                            <th>发布时间</th>
+                            <th class="col-actions">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="a : ${announcements}">
+                            <td class="col-wide">
+                                <strong th:text="${a.title}">标题</strong>
+                                <small class="cell-sub" th:text="${a.summary}">摘要</small>
+                            </td>
+                            <td th:text="${a.publisher}">发布人</td>
+                            <td th:text="${a.createTimeText}">发布时间</td>
+                            <td class="col-actions">
+                                <a class="btn btn-ghost btn-sm"
+                                   th:href="@{/admin/announcements(edit=${a.id},page=${page})}">编辑</a>
+                                <form class="inline-form" th:action="@{/admin/announcements/{id}/delete(id=${a.id})}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            data-confirm="确定删除该公告吗？">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="empty" th:if="${#lists.isEmpty(announcements)}">暂无公告，请在右侧发布新公告</p>
+
+                <div class="pager" th:if="${pageData.totalPages > 1}">
+                    <a th:if="${pageData.hasPrevious()}"
+                       th:href="@{/admin/announcements(page=${pageData.number - 1})}">上一页</a>
+                    <a th:each="i : ${pageNumbers}" th:classappend="${i == pageData.number} ? 'active'"
+                       th:href="@{/admin/announcements(page=${i})}" th:text="${i + 1}">1</a>
+                    <a th:if="${pageData.hasNext()}"
+                       th:href="@{/admin/announcements(page=${pageData.number + 1})}">下一页</a>
+                </div>
+            </section>
+
+            <aside class="side-column">
+                <section class="card">
+                    <div class="card-header">
+                        <h3 th:text="${announcementForm.id == null ? '发布公告' : '编辑公告'}">发布公告</h3>
+                        <a class="btn btn-ghost btn-sm" th:if="${announcementForm.id != null}"
+                           th:href="@{/admin/announcements}">取消编辑</a>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/announcements/save}" th:object="${announcementForm}" method="post"
+                              class="form-stack">
+                            <input type="hidden" th:field="*{id}"/>
+
+                            <div class="form-item">
+                                <label for="title">公告标题</label>
+                                <input id="title" type="text" th:field="*{title}" placeholder="请输入公告标题"
+                                       maxlength="100"/>
+                                <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+                            </div>
+
+                            <div class="form-item">
+                                <label for="content">公告内容</label>
+                                <textarea id="content" rows="8" th:field="*{content}" maxlength="1000"
+                                          placeholder="请输入公告正文，发布后将在学生首页展示"></textarea>
+                                <p class="field-error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></p>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"
+                                        th:text="${announcementForm.id == null ? '发布公告' : '保存修改'}">发布公告</button>
+                                <a class="btn btn-ghost" th:href="@{/admin/announcements}">重置</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 60m
+
+spring:
+  application:
+    name: 实验室预约管理系统
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 请根据本机 MySQL 实际情况修改数据库账号密码
+    url: jdbc:mysql://localhost:3306/lab_reservation?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    # 表结构由 sql/lab_reservation.sql 创建，这里不做自动建表
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    prefix: classpath:/templates/
+    suffix: .html
+  web:
+    resources:
+      static-locations: classpath:/static/
+  messages:
+    encoding: UTF-8
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+
+logging:
+  level:
+    root: info
+    com.campus.lab: info
